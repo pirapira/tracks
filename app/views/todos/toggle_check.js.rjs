@@ -1,4 +1,4 @@
-if @saved  
+if @saved
   page[@todo].remove
   page.show "empty_"+@original_item_due_id if @old_due_empty
   if @todo.completed?
@@ -47,6 +47,7 @@ if @saved
   
   page.hide "status"
   page.replace_html "badge_count", @down_count
+  page.reload  if @reload
   if @todo.completed?  && !@todo.project_id.nil? && @prefs.show_project_on_todo_done && !source_view_is(:project)
     page.redirect_to project_path(@todo.project_id)
   end

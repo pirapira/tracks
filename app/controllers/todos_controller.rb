@@ -132,6 +132,12 @@ class TodosController < ApplicationController
   end
 
   def add_waiting
+    waiter_id = params['waiter']
+    @waiter = Todo.find(waiter_id)
+    waitee_id = params['waitee']
+    waitee = Todo.find(waitee_id)
+    @waiter.waiting_for = waitee if @waiter.waiting_for.nil?
+    @success = @waiter.save
     respond_to do |format|
       format.js do
         render
@@ -149,6 +155,14 @@ class TodosController < ApplicationController
   
     # check if this todo has a related recurring_todo. If so, create next todo
     @new_recurring_todo = check_for_next_todo(@todo) if @saved
+    waiters = Todo.find(:all, :conditions => ["waiting_for = ?", @todo.id])
+    unless waiters.empty?
+      waiters.each {|w|
+        w.waiting_for = nil
+        w.save!
+      }
+      @reload = true
+    end
     
     respond_to do |format|
       format.js do
@@ -633,11 +647,11 @@ class TodosController < ApplicationController
             # current_users.todos.find but that broke with_scope for :limit
 
             # Exclude hidden projects from count on home page
-            @todos = Todo.find(:all, :conditions => ['todos.user_id = ?', current_user.id], :include => [ :project, :context, :tags ])
+            @todos = Todo.find(:all, :conditions => ['todos.waiting_for IS NULL AND (todos.user_id = ?)', current_user.id], :include => [ :project, :context, :tags ])
 
             # Exclude hidden projects from the home page
             @not_done_todos = Todo.find(:all, 
-              :conditions => ['todos.user_id = ? AND contexts.hide = ? AND (projects.state = ? OR todos.project_id IS NULL)', 
+              :conditions => ['todos.waiting_for IS NULL AND todos.user_id = ? AND contexts.hide = ? AND (projects.state = ? OR todos.project_id IS NULL)', 
                 current_user.id, false, 'active'], 
               :order => "todos.due IS NULL, todos.due ASC, todos.created_at ASC", 
               :include => [ :project, :context, :tags ])

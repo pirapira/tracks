@@ -4,7 +4,7 @@ class Todo < ActiveRecord::Base
   belongs_to :project
   belongs_to :user
   belongs_to :recurring_todo
-  belongs_to :waiting_for, :class_name => "Todo"
+  belongs_to :waiting_for, :class_name => "Todo", :foreign_key => "waiting_for"
 
   named_scope :active, :conditions => { :state => 'active' }
   named_scope :not_completed, :conditions =>  ['NOT (state = ? )', 'completed']
@@ -192,7 +192,7 @@ class Todo < ActiveRecord::Base
     elsif waiting_for.blank?
       return false
     else
-      return waiting_for.has_waiting_for_loop
+      return waiting_for.has_waiting_for_loop origin
     end
   end
 end

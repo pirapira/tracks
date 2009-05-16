@@ -53,7 +53,7 @@ parameters += "&_tag_name=#{@tag_name}" if @source_view == 'tag'
 unless suppress_drag_handle
   drop_receiving_element(dom_id(todo),
   :url => {:controller => "todos", :action => "add_waiting"},
-  :with => "'todo=' + encodeURIComponent(element.id.split('_').last())"
+  :with => "'waiter=' + encodeURIComponent(element.id.split('_').last()) + '&waitee=' + encodeURIComponent(#{todo.id})"
   )
 end
 %>
