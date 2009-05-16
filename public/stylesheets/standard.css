@@ -109,9 +109,18 @@ a.show_notes:hover, a.link_to_notes:hover {background-image: url(/images/notes_o
 }
 
 #display_box {
-    float: left;
-    width: 55%;
-    margin: 0px 10px 50px 15px;
+    float: none;
+    margin-right: 310px;
+    padding-left: 5px;
+}
+
+body.preferences div#display_box {
+    margin-right:410px;
+}
+
+body.preferences div#input_box {
+    width:390px;
+    right:15px;
 }
 
 #single_box {
@@ -218,7 +227,6 @@ a.show_notes:hover, a.link_to_notes:hover {background-image: url(/images/notes_o
 #navlist {
     margin: 0;
     padding: 0 0 20px 5px;
-    /*      border-bottom: 1px solid #000;*/
 }
 
 #navlist ul, #navlist li {
@@ -254,18 +262,11 @@ a.show_notes:hover, a.link_to_notes:hover {background-image: url(/images/notes_o
     margin-bottom: 20px;
     clear: both;
     background-color: #000;
-    filter: alpha(opacity=75);
-    -moz-opacity: .75;
-    opacity: .75;
     color: #eee;
     width: 100%;
     z-index:101;
 }
-body.stats #topbar {
-    filter: alpha(opacity=100);
-    -moz-opacity: 1;
-    opacity: 1;
-}      
+
 #date {
     float: left;
     width: 45%;
@@ -309,8 +310,8 @@ body.stats #topbar {
 }
 
 .container_toggle img {
-    height:20px;
-    width:20px;
+    height:14px;
+    width:14px;
     border:0px;
 }
 
@@ -326,8 +327,12 @@ h2 a:hover {
 }
 
 div#input_box {
-    margin: 0px 15px 0px 58%;
-    padding: 0px 15px 0px 0px;
+    position: absolute;
+    width: 265px;
+    margin: 0;
+    padding: 0px 0px 0px 0px;
+    top: 90px;
+    right: 40px;
 }
 
 #input_box h2 {
@@ -352,6 +357,10 @@ div.item-container {
     clear: both;
 }
 
+.sf-item-selected {
+    background: #ddd;
+}
+
 a.recurring_icon {
     vertical-align: middle;
     background-color: transparent;    
@@ -365,17 +374,17 @@ a.icon {
 
 input.item-checkbox {
     float: left;
-    margin-left: 10px;
+    margin-left: 3px;
+    margin-right: 3px;
     vertical-align: middle;
 }
 
-.description {
-    margin-left: 85px;
-    position:relative
+.description, .stale_l1, .stale_l2, .stale_l3 {
+    margin-left: 60px;
+    position:relative;    
 }
 
 .stale_l1, .stale_l2, .stale_l3 {
-    margin-left: 82px;
     padding-left: 3px;
 }
 
@@ -394,8 +403,12 @@ input.item-checkbox {
     font-size: 85%;
     text-align: center;
     color: #999;
-    margin: 20px 20px 5px 20px;
+    margin: 20px 310px 5px 20px;
     padding: 0px;
+}
+
+body.preferences div#footer {
+    margin-right:410px;
 }
 
 /* The notes which may be attached to an item */      
@@ -465,6 +478,9 @@ div#project_status > div {
 }
 
 div#default_context > div{
+    padding:10px;
+}
+div#default_tags > div{
     padding:10px;
 }
 a.footer_link {color: #cc3334; font-style: normal;}
@@ -684,7 +700,8 @@ div#list-active-projects, div#list-hidden-projects, div#list-completed-projects,
     clear:right;
     border: 1px solid #999;
 }
-.project-state-group h2 {
+
+.project-state-group h2, .list-stategroup-contexts-container h2 {
     margin:20px 0px 8px 13px;
 }
 
@@ -759,9 +776,6 @@ form {
     width: 270px;
     padding: 5px 10px;
     background-color: #000;
-    filter: alpha(opacity=75);
-    -moz-opacity: .75;
-    opacity: .75;
     color: #eee;
 }
 
@@ -1209,4 +1223,31 @@ body.integrations textarea {
 }
 .defer-container a:hover {
   background-color: inherit;
+}
+
+div.auto_complete {
+  width: 350px;
+  background: #fff;
+  color: #000;
+}
+div.auto_complete ul {
+  border:1px solid #888;
+  margin:0;
+  padding:0;
+  width:100%;
+  list-style-type:none;
+}
+div.auto_complete ul li {
+  margin:0;
+  padding:3px;
+  list-style-type: none;
+}
+div.auto_complete ul li.selected {
+  background-color: #ffb;
+  font-weight:bold;
+}
+div.auto_complete ul strong.highlight {
+  color: #800;
+  margin:0;
+  padding:0;
 }

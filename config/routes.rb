@@ -29,7 +29,7 @@ ActionController::Routing::Routes.draw do |map|
   end
 
   map.resources :todos,
-                :member => {:toggle_check => :put, :toggle_star => :put},
+                :member => {:toggle_check => :put, :toggle_star => :put, :add_waiting => :post},
                 :collection => {:check_deferred => :post, :filter_to_context => :post, :filter_to_project => :post}
   map.with_options :controller => "todos" do |todos|
     todos.home '', :action => "index"
@@ -65,6 +65,7 @@ ActionController::Routing::Routes.draw do |map|
 
   map.preferences 'preferences', :controller => 'preferences', :action => 'index'
   map.integrations 'integrations', :controller => 'integrations', :action => 'index'
+  map.stats 'stats', :controller => 'stats', :action => 'index'
   map.search_plugin '/integrations/search_plugin.xml', :controller => 'integrations', :action => 'search_plugin', :format => 'xml'
 
   map.resources :recurring_todos,

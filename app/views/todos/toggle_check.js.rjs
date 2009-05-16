@@ -1,4 +1,4 @@
-if @saved  
+if @saved
   page[@todo].remove
   page.show "empty_"+@original_item_due_id if @old_due_empty
   if @todo.completed?
@@ -47,9 +47,12 @@ if @saved
   
   page.hide "status"
   page.replace_html "badge_count", @down_count
+  page.reload  if @reload
   if @todo.completed?  && !@todo.project_id.nil? && @prefs.show_project_on_todo_done && !source_view_is(:project)
     page.redirect_to project_path(@todo.project_id)
   end
 else
   page.replace_html "status", content_tag("div", content_tag("h2", "#{pluralize(@todo.errors.count, "error")} prohibited this action from being saved") + content_tag("p", "There were problems with the following fields:") + content_tag("ul", @todo.errors.each_full { |msg| content_tag("li", msg) }), "id" => "errorExplanation", "class" => "errorExplanation")  
 end
+# make sure the behavior of the new/updated todo is enabled
+page << "TodoBehavior.enableToggleNotes()"

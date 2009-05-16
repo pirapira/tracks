@@ -13,7 +13,7 @@ require 'time'
 # run because this tag went looking for the taggings table that did not exist
 # when you feshly create a new database Old comment: We need this in development
 # mode, or you get 'method missing' errors
-# 
+#
 # Tag
 
 class CannotAccessContext < RuntimeError; end
@@ -30,6 +30,7 @@ class ApplicationController < ActionController::Base
   
   before_filter :set_session_expiration
   before_filter :set_time_zone
+  before_filter :set_zindex_counter
   prepend_before_filter :login_required
   prepend_before_filter :enable_mobile_content_negotiation
   after_filter :set_charset
@@ -85,7 +86,7 @@ class ApplicationController < ActionController::Base
   # Returns a count of next actions in the given context or project The result
   # is count and a string descriptor, correctly pluralised if there are no
   # actions or multiple actions
-  # 
+  #
   def count_undone_todos_phrase(todos_parent, string="actions")
     count = count_undone_todos(todos_parent)
     if count == 1
@@ -109,7 +110,7 @@ class ApplicationController < ActionController::Base
 
   # Convert a date object to the format specified in the user's preferences in
   # config/settings.yml
-  # 
+  #
   def format_date(date)
     if date
       date_format = prefs.date_format
@@ -123,13 +124,17 @@ class ApplicationController < ActionController::Base
   # Uses RedCloth to transform text using either Textile or Markdown Need to
   # require redcloth above RedCloth 3.0 or greater is needed to use Markdown,
   # otherwise it only handles Textile
-  # 
+  #
   def markdown(text)
     RedCloth.new(text).to_html
   end
   
   def build_default_project_context_name_map(projects)
     Hash[*projects.reject{ |p| p.default_context.nil? }.map{ |p| [p.name, p.default_context.name] }.flatten].to_json 
+  end
+  
+  def build_default_project_tags_map(projects)
+    Hash[*projects.reject{ |p| p.default_tags.nil? }.map{ |p| [p.name, p.default_tags] }.flatten].to_json 
   end
   
   # Here's the concept behind this "mobile content negotiation" hack: In
@@ -261,6 +266,11 @@ class ApplicationController < ActionController::Base
   
   def set_time_zone
     Time.zone = current_user.prefs.time_zone if logged_in?
+  end
+
+  def set_zindex_counter
+    # this counter can be used to handle the IE z-index bug
+    @z_index_counter = 1000
   end
   
 end

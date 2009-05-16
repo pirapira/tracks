@@ -4,8 +4,11 @@ class TodosController < ApplicationController
 
   skip_before_filter :login_required, :only => [:index, :calendar]
   prepend_before_filter :login_or_feed_token_required, :only => [:index, :calendar]
-  append_before_filter :init, :except => [ :destroy, :completed, :completed_archive, :check_deferred, :toggle_check, :toggle_star, :edit, :update, :create, :calendar ]
+  append_before_filter :init, :except => [ :destroy, :completed,
+    :completed_archive, :check_deferred, :toggle_check, :toggle_star,
+    :edit, :update, :create, :calendar, :auto_complete_for_tag]
   append_before_filter :get_todo_from_params, :only => [ :edit, :toggle_check, :toggle_star, :show, :update, :destroy ]
+  protect_from_forgery :except => [:auto_complete_for_tag]
 
   session :off, :only => :index, :if => Proc.new { |req| is_feed_request(req) }
 
@@ -49,6 +52,7 @@ class TodosController < ApplicationController
     @source_view = params['_source_view'] || 'todo'
     p = TodoCreateParamsHelper.new(params, prefs)        
     p.parse_dates() unless mobile?
+    tag_list = p.tag_list
     
     @todo = current_user.todos.build(p.attributes)
     
@@ -67,8 +71,8 @@ class TodosController < ApplicationController
 
     @todo.update_state_from_project
     @saved = @todo.save
-    unless (@saved == false) || p.tag_list.blank?
-      @todo.tag_with(p.tag_list)
+    unless (@saved == false) || tag_list.blank?
+      @todo.tag_with(tag_list)
       @todo.tags.reload
     end
     
@@ -127,6 +131,20 @@ class TodosController < ApplicationController
     end
   end
 
+  def add_waiting
+    waiter_id = params['waiter']
+    @waiter = Todo.find(waiter_id)
+    waitee_id = params['waitee']
+    waitee = Todo.find(waitee_id)
+    @waiter.waiting_for = waitee if @waiter.waiting_for.nil?
+    @success = @waiter.save
+    respond_to do |format|
+      format.js do
+        render
+      end
+    end
+  end
+
   # Toggles the 'done' status of the action
   #
   def toggle_check
@@ -137,6 +155,14 @@ class TodosController < ApplicationController
   
     # check if this todo has a related recurring_todo. If so, create next todo
     @new_recurring_todo = check_for_next_todo(@todo) if @saved
+    waiters = Todo.find(:all, :conditions => ["waiting_for = ?", @todo.id])
+    unless waiters.empty?
+      waiters.each {|w|
+        w.waiting_for = nil
+        w.save!
+      }
+      @reload = true
+    end
     
     respond_to do |format|
       format.js do
@@ -263,7 +289,7 @@ class TodosController < ApplicationController
     if (@project_changed && !@original_item_project_id.nil?) then
       @todo.update_state_from_project
       @todo.save!
-      @remaining_undone_in_project = current_user.projects.find(@original_item_project_id).not_done_todo_count
+      @remaining_undone_in_project = current_user.projects.find(@original_item_project_id).not_done_todos.count
     end
     determine_down_count
     determine_deferred_tag_count(params['_tag_name']) if @source_view == 'tag'
@@ -325,6 +351,7 @@ class TodosController < ApplicationController
       format.xml { render :text => '200 OK. Action deleted.', :status => 200 }
     
     end
+
   end
 
   def completed
@@ -354,7 +381,8 @@ class TodosController < ApplicationController
     @not_done_todos = current_user.deferred_todos
     @count = @not_done_todos.size
     @down_count = @count
-    @default_project_context_name_map = build_default_project_context_name_map(@projects).to_json unless mobile?
+    @default_project_context_name_map = build_default_project_context_name_map(@projects).to_json
+    @default_project_tags_map = build_default_project_tags_map(@projects).to_json
     
     respond_to do |format|
       format.html
@@ -425,6 +453,7 @@ class TodosController < ApplicationController
     respond_to do |format|
       format.html {
         @default_project_context_name_map = build_default_project_context_name_map(@projects).to_json
+        @default_project_tags_map = build_default_project_tags_map(@projects).to_json
       }
       format.m { 
         cookies[:mobile_url]= {:value => request.request_uri, :secure => SITE_CONFIG['secure_cookies']}
@@ -437,6 +466,7 @@ class TodosController < ApplicationController
     @source_view = params['_source_view'] || 'todo'
     numdays = params['days'].to_i
     @todo = Todo.find(params[:id])
+    @original_item_context_id = @todo.context_id
     @todo.show_from = (@todo.show_from || @todo.user.date) + numdays.days
     @saved = @todo.save
 
@@ -495,7 +525,15 @@ class TodosController < ApplicationController
         render :action => 'calendar', :layout => false, :content_type => Mime::ICS
       }
     end
-  end  
+  end
+
+  def auto_complete_for_tag
+    @items = Tag.find(:all,
+    :conditions => [ "name LIKE ?", '%' + params['tag_list'] + '%' ],
+    :order => "name ASC",
+    :limit => 10)
+    render :inline => "<%= auto_complete_result(@items, :name) %>"
+  end
   
   private
   
@@ -608,11 +646,11 @@ class TodosController < ApplicationController
             # current_users.todos.find but that broke with_scope for :limit
 
             # Exclude hidden projects from count on home page
-            @todos = Todo.find(:all, :conditions => ['todos.user_id = ?', current_user.id], :include => [ :project, :context, :tags ])
+            @todos = Todo.find(:all, :conditions => ['todos.waiting_for IS NULL AND (todos.user_id = ?)', current_user.id], :include => [ :project, :context, :tags ])
 
             # Exclude hidden projects from the home page
             @not_done_todos = Todo.find(:all, 
-              :conditions => ['todos.user_id = ? AND contexts.hide = ? AND (projects.state = ? OR todos.project_id IS NULL)', 
+              :conditions => ['todos.waiting_for IS NULL AND todos.user_id = ? AND contexts.hide = ? AND (projects.state = ? OR todos.project_id IS NULL)', 
                 current_user.id, false, 'active'], 
               :order => "todos.due IS NULL, todos.due ASC, todos.created_at ASC", 
               :include => [ :project, :context, :tags ])
@@ -652,8 +690,8 @@ class TodosController < ApplicationController
       end
       from.project do
         unless @todo.project_id == nil
-          @down_count = current_user.projects.find(@todo.project_id).not_done_todo_count(:include_project_hidden_todos => true)
-          @deferred_count = current_user.projects.find(@todo.project_id).deferred_todo_count
+          @down_count = current_user.projects.find(@todo.project_id).not_done_todos_including_hidden.count
+          @deferred_count = current_user.projects.find(@todo.project_id).deferred_todos.count
         end
       end
       from.deferred do
@@ -696,7 +734,7 @@ class TodosController < ApplicationController
       end
       from.project do
         unless @todo.project_id == nil
-          @completed_count = current_user.projects.find(@todo.project_id).done_todo_count
+          @completed_count = current_user.projects.find(@todo.project_id).done_todos.count
         end
       end
     end
@@ -731,6 +769,7 @@ class TodosController < ApplicationController
       end
        
       @default_project_context_name_map = build_default_project_context_name_map(@projects).to_json
+      @default_project_tags_map = build_default_project_tags_map(@projects).to_json
        
       render
     end

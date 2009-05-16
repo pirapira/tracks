@@ -2,7 +2,7 @@ module TodosHelper
 
   # #require 'users_controller' Counts the number of incomplete items in the
   # specified context
-  # 
+  #
   def count_items(context)
     count = Todo.find_all("done=0 AND context_id=#{context.id}").length
   end
