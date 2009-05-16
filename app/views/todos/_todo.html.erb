@@ -3,7 +3,7 @@
 suppress_context ||= false
 suppress_project ||= false
 suppress_edit_button ||= todo.completed?
-suppress_drag_handle ||= false
+suppress_drag_handle ||= todo.completed?
 parameters = "_source_view=#{@source_view}"
 parameters += "&_tag_name=#{@tag_name}" if @source_view == 'tag'
 @z_index_counter = @z_index_counter - 1  # for IE z-index bug
@@ -43,13 +43,17 @@ parameters += "&_tag_name=#{@tag_name}" if @source_view == 'tag'
     <% end -%>
   </div>
 </div>
-<% unless suppress_drag_handle %>
-<%=  draggable_element(dom_id(todo, 'container'), :revert => "'failure'", :handle =>
-  "'handle'", :onDrop => "''") %>
-<% end %>
+<%= unless suppress_drag_handle
+  draggable_element(dom_id(todo), :revert => "'failure'", 
+  :scroll => 'window',
+  :handle => "'handle'"
+  ) 
+ end %>
 <%=
 unless suppress_drag_handle
-  drop_receiving_element(dom_id(todo, 'container'), 
-  :url => {:controller => "Todo", :action => "add_waiting"})
+  drop_receiving_element(dom_id(todo),
+  :url => {:controller => "todos", :action => "add_waiting"},
+  :with => "'todo=' + encodeURIComponent(element.id.split('_').last())"
+  )
 end
 %>

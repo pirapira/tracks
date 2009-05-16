@@ -131,6 +131,14 @@ class TodosController < ApplicationController
     end
   end
 
+  def add_waiting
+    respond_to do |format|
+      format.js do
+        render
+      end
+    end
+  end
+
   # Toggles the 'done' status of the action
   #
   def toggle_check
@@ -329,6 +337,7 @@ class TodosController < ApplicationController
       format.xml { render :text => '200 OK. Action deleted.', :status => 200 }
     
     end
+
   end
 
   def completed
