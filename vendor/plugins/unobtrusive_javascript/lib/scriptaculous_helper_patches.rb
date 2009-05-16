@@ -1,4 +1,5 @@
 module ActionView::Helpers::ScriptaculousHelper  
+  include UJS::Helpers
   def draggable_element(element_id, options={})
     set_default_external!(options)
     external = options.delete :external

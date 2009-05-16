@@ -4,6 +4,7 @@ class Todo < ActiveRecord::Base
   belongs_to :project
   belongs_to :user
   belongs_to :recurring_todo
+  belongs_to :waiting_for, :class_name => "Todo"
 
   named_scope :active, :conditions => { :state => 'active' }
   named_scope :not_completed, :conditions =>  ['NOT (state = ? )', 'completed']
@@ -54,6 +55,9 @@ class Todo < ActiveRecord::Base
   def validate
     if !show_from.blank? && show_from < user.date
       errors.add("show_from", "must be a date in the future")
+    end
+    if has_waiting_for_loop self
+      errors.add("waiting_for", "must not make a loop")
     end
   end
 
@@ -180,5 +184,15 @@ class Todo < ActiveRecord::Base
     todo.context_id = context_id
     todo.project_id = project_id unless project_id.nil?
     return todo
+  end
+
+  def has_waiting_for_loop origin
+    if waiting_for == origin
+      return true
+    elsif waiting_for.blank?
+      return false
+    else
+      return waiting_for.has_waiting_for_loop
+    end
   end
 end

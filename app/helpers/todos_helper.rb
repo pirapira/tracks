@@ -286,4 +286,11 @@ module TodosHelper
     class_str = todo.starred? ? "starred_todo" : "unstarred_todo"
     image_tag("blank.png", :title =>"Star action", :class => class_str)
   end
+
+  def get_draggable_options
+    {
+      :revert => true,
+      :handle => 'handle'
+    }
+  end
 end

@@ -3,11 +3,12 @@
 suppress_context ||= false
 suppress_project ||= false
 suppress_edit_button ||= todo.completed?
+suppress_drag_handle ||= true
 parameters = "_source_view=#{@source_view}"
 parameters += "&_tag_name=#{@tag_name}" if @source_view == 'tag'
 @z_index_counter = @z_index_counter - 1  # for IE z-index bug
 %>
-<div id="<%= dom_id(todo) %>" class="item-container">
+<div id="<%= dom_id(todo, 'container') %>" class="item-container">
   <div id="<%= dom_id(todo, 'line') %>">
     <%= remote_star_icon %>
     <%= remote_toggle_checkbox unless source_view_is :deferred %>
@@ -22,13 +23,17 @@ parameters += "&_tag_name=#{@tag_name}" if @source_view == 'tag'
         <% end %>
     </ul></ul>
     <div class="description<%= staleness_class( todo ) %>">
+    <% unless suppress_drag_handle -%>
+      <span class="handle">DRAG->WAIT</span>
+    <% end -%>
       <%= date_span -%>
       <span class="todo.descr"><%= h sanitize(todo.description) %></span>
       <%= image_tag_for_recurring_todo(todo) if @todo.from_recurring_todo? %>
       <%= tag_list %>
       <%= deferred_due_date %>
       <%= project_and_context_links( parent_container_type, :suppress_context => suppress_context, :suppress_project => suppress_project ) %>
-      <%= render(:partial => "todos/toggle_notes", :locals => { :item => todo }) if todo.notes? %>
+      <%= render(:partial => "todos/toggle_notes", :locals => { :item => todo }) if
+      todo.notes? %>
     </div>
   </div>
   <div id="<%= dom_id(todo, 'edit') %>" class="edit-form" style="display:none">
@@ -38,3 +43,13 @@ parameters += "&_tag_name=#{@tag_name}" if @source_view == 'tag'
     <% end -%>
   </div>
 </div>
+<% unless suppress_drag_handle %>
+<%=  draggable_element(dom_id(todo, 'container'), :revert => "'failure'", :handle =>
+  "'handle'", :onDrop => "''") %>
+<% end %>
+<%=
+unless suppress_drag_handle
+  drop_receiving_element(dom_id(todo, 'container'), 
+  :url => {:controller => "Todo", :action => "add_waiting"})
+end
+%>
