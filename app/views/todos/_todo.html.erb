@@ -3,12 +3,12 @@
 suppress_context ||= false
 suppress_project ||= false
 suppress_edit_button ||= todo.completed?
-suppress_drag_handle ||= true
+suppress_drag_handle ||= false
 parameters = "_source_view=#{@source_view}"
 parameters += "&_tag_name=#{@tag_name}" if @source_view == 'tag'
 @z_index_counter = @z_index_counter - 1  # for IE z-index bug
 %>
-<div id="<%= dom_id(todo, 'container') %>" class="item-container">
+<div id="<%= dom_id(todo) %>" class="item-container">
   <div id="<%= dom_id(todo, 'line') %>">
     <%= remote_star_icon %>
     <%= remote_toggle_checkbox unless source_view_is :deferred %>
